@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE root [
+<!ENTITY nbsp "&#160;">
+]>
+<html xmlns:frx="urn:FrxReports">
+<head>
+<title>Weekly File Activity Report</title>
+<frx:category/>
+<frx:options/>
+<frx:parameters>
+</frx:parameters>
+<frx:docgen>
+</frx:docgen>
+<frx:fields>
+</frx:fields>
+<frx:menu/>
+<frx:cache/>
+<style/>
+</head>
+<body>
+<div id="FileVersions_block" class="FrxTable" frx:block="drupal/FileVersions">
+    <table>
+      <thead>
+        <tr>
+          <th>fid</th>
+          <th>fname</th>
+          <th>version</th>
+          <th>date</th></tr></thead>
+      <tbody>
+        <tr id="FileVersions" frx:foreach="*">
+          <td>{fid}</td>
+          <td>{fname}</td>
+          <td>{version}</td>
+          <td>{date}</td></tr></tbody></table></div></body>
+</html>

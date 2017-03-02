@@ -1,0 +1,98 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function bulk_file_upload_menu() {
+  $items = array();
+
+  // general view, edit, delete for files
+  $items['admin/content/file/bulk-upload'] = array(
+    'title' => 'Bulk upload',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bulk_file_upload_form', array()),
+    'access arguments' => array('administer files'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+
+  // general view, edit, delete for files
+  $items['admin/content/file/thumbnails/bulk-upload'] = array(
+    'title' => 'Bulk upload',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bulk_file_upload_form', array()),
+    'access arguments' => array('administer files'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+
+  return $items;
+}
+
+function bulk_file_upload_form($form, &$form_state) {
+  $form = array();
+
+  $form['upload'] = array(
+    '#type' => 'plupload',
+    '#title' => t(''),
+    '#size' => 50,
+    '#description' => t(''),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Upload',
+  );
+
+  return $form;
+}
+
+function bulk_file_upload_form_submit($form, &$form_state) {
+  $upload_location = !empty($form['upload']['#upload_location']) ?
+    $form['upload']['#upload_location'] . '/' :
+    variable_get('file_default_scheme', 'public') . '://';
+
+  // Ensure writable destination directory for the files.
+  file_prepare_directory($upload_location, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+
+  // We can't use file_save_upload() because of
+  // http://www.jacobsingh.name/content/tight-coupling-no-not.
+  foreach ($form_state['values']['upload'] as $uploaded_file) {
+    if ($uploaded_file['status'] == 'done') {
+      $source = $uploaded_file['tmppath'];
+      $destination = file_stream_wrapper_uri_normalize($upload_location . $uploaded_file['name']);
+      // Rename it to its original name, and put it in its final home.
+      // Note - not using file_move here because if we call file_get_mime
+      // (in file_uri_to_object) while it has a .tmp extension, it horks.
+      $destination = file_unmanaged_move($source, $destination, FILE_EXISTS_RENAME);
+
+      $file = file_uri_to_object($destination);
+      $file->status = FILE_STATUS_PERMANENT;
+      $file->field_file_image_alt_text[LANGUAGE_NONE][0]['value'] = $file->filename;
+      file_save($file);
+
+      $form_state['files'][$file->fid] = $file;
+    }
+    else {
+      // @todo: move this to element validate or something.
+      form_set_error('pud', t('The specified file %name could not be uploaded.', array('%name' => $uploaded_file['name'])));
+    }
+  }
+
+  // Redirect to the file edit page.
+  if (file_entity_access('update', $file) && module_exists('media_bulk_upload')) {
+    $destination = array();
+    if (isset($_GET['destination'])) {
+      $destination = drupal_get_destination();
+      unset($_GET['destination']);
+    }
+    elseif (user_access('administer files')) {
+      $destination = array('destination' => 'admin/content/file');
+    }
+    $form_state['redirect'] = array('admin/content/file/edit-multiple/' . implode(' ', array_keys($form_state['files'])), array('query' => $destination));
+  }
+  else {
+    $form_state['redirect'] = user_access('administer files') ? 'admin/content/file' : '<front>';
+  }
+
+  // Clear the page and block caches.
+  cache_clear_all();
+}

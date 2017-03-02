@@ -1,0 +1,14 @@
+name = Bulk File Upload
+description = Allows to upload multiple files in a bulk.
+core = 7.x
+configure = admin/content/file/bulk-upload
+dependencies[] = file
+dependencies[] = file_entity
+dependencies[] = plupload
+
+; Information added by Drupal.org packaging script on 2015-10-01
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "bulk_file_upload"
+datestamp = "1443710042"
+
